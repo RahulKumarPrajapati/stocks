@@ -4,7 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import axios from "axios";
 import { DOMAIN } from './shared/constant';
 import { stockCode, stockDetails, topStocks, getCurrStock, getCurrStockDetails, getTopStocks } from './shared/stockSlice';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
 
 function App() {
   const crypto = [
@@ -15,15 +17,18 @@ function App() {
     {value: 'SOL', 'label': 'SOL'},
   ];
 
+  const [show, setShow] = useState(false);
+
   const currCode = useSelector(getCurrStock);
   const currStockDetails = useSelector(getCurrStockDetails);
   const topStocksDetails = useSelector(getTopStocks)
   const dispatch = useDispatch();
-
-  const handleChange = (newValue) => {
-    dispatch(stockCode({code: newValue.value}))
+  const [code, setCode] = useState(currCode);
+  const handleClose = () => {
+    setCode(currCode);
+    setShow(false);
   };
-
+  const handleShow = () => setShow(true);
   useEffect(() => {
     const interval = setInterval(() => {
       let url = DOMAIN.dev + '/api/stock/topStocks';
@@ -40,29 +45,10 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      let url = DOMAIN.dev + '/api/stock/coins/details';
-      let coinData = {
-        code: currCode
-      }
-      axios.post(url, coinData).then(
-        res => {
-          dispatch(stockDetails({data: res.data}))
-        },
-        err => {
-            console.log('Error occured', err)
-        }
-      )
-    }, 5000);
-
-    return () => clearInterval(interval);
-  });
-
-  const getStockData = async () =>{
+  const getStockData = (code) =>{
     let url = DOMAIN.dev + '/api/stock/coins/details';
     let coinData = {
-      code: currCode
+      code: code
     }
     axios.post(url, coinData).then(
       res => {
@@ -72,6 +58,24 @@ function App() {
           console.log('Error occured', err)
       }
     )
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      getStockData(currCode);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  });
+
+  const handleChange = (newValue) => {
+    setCode(newValue.value);
+  };
+
+  const handleClick = () => {
+    dispatch(stockCode({code: code}) );
+    getStockData(code);
+    setShow(false);
   }
 
   return (
@@ -93,16 +97,10 @@ function App() {
           </tbody>
         </table>
         <div className='w-25'>
-          <div className='d-flex justify-content-end align-items-center bg-white'>
-            <Select
-                className="basic-single"
-                classNamePrefix="select"
-                defaultValue={{value: currCode, label: currCode}}
-                name="color"
-                options={crypto}
-                onChange={handleChange}
-              />
-              <button className='btn btn-primary ms-2' onClick={getStockData}>Change</button>
+          <div className='d-flex justify-content-end align-items-center'>
+            <Button variant="primary" className='ms-2 text-nowrap col-5' onClick={handleShow}>
+              Change Crypto
+            </Button>
           </div>
           <div className='mt-2'>
             <table className="table shadow-lg p-3 mb-5 bg-white rounded">
@@ -136,6 +134,30 @@ function App() {
           </div>
         </div>
       </div>
+
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Modal heading</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Select
+            className="basic-single col-5"
+            classNamePrefix="select"
+            defaultValue={{value: currCode, label: currCode}}
+            name="color"
+            options={crypto}
+            onChange={handleChange}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleClick}>
+            Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

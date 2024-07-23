@@ -1,13 +1,15 @@
-const express = require('express');
-const Stocks = require('../model/stock.model');
+import express from 'express';
+import Stocks from '../model/stock.model';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 const router = express.Router();
 const BASE_URI = '/stock'
-const apiKey = process.env.API_KEY || '6183e3cb-6de7-47dc-b15b-385a835085b7'
-
+const apiKey:any = process.env.STOCK_API_KEY
 router.post(BASE_URI + '/topStocks', async (req, res) => {
   try {
     // Your existing logic to fetch and store coin data from the API
-    const coinsData = await fetch(new Request("https://api.livecoinwatch.com/coins/list"), {
+    const coinsData:any = await fetch(new Request("https://api.livecoinwatch.com/coins/list"), {
       method: "POST",
       headers: new Headers({
         "content-type": "application/json",
@@ -22,8 +24,8 @@ router.post(BASE_URI + '/topStocks', async (req, res) => {
         meta: false,
       }),
     });
-    const data = await coinsData.json();
-    let result = [];
+    const data:any = await coinsData.json();
+    let result:Array<any> = [];
     for (let coin of data) {
       let filtered_data = {
         code: coin.code,
@@ -40,7 +42,7 @@ router.post(BASE_URI + '/topStocks', async (req, res) => {
 
 router.post(BASE_URI + '/coins/details', async (req, res) => {
   try {
-      const result = await Stocks.find({code: req.body.code}).sort({timestamp: -1}).limit(20);
+      const result:Array<any> = await Stocks.find({code: req.body.code}).sort({timestamp: -1}).limit(20);
       // console.log('List', result)
       res.status(200).json(result); // Send created user data with 201 Created status
   } catch (error) {
@@ -48,4 +50,4 @@ router.post(BASE_URI + '/coins/details', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
